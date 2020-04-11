@@ -1,5 +1,5 @@
 /**
- * kdiff - diff library implemented in Kotlin.
+ * kdiff - a diff library in Kotlin
  * Copyright (C) 2020 Anthony Li
  *
  * This program is free software: you can redistribute it and/or modify
