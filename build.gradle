@@ -41,20 +41,32 @@ dependencies {
   testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
 }
 
+task sourcesJar(type: Jar) {
+  archiveClassifier.set("sources")
+  from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar) {
+  archiveClassifier.set("javadoc")
+  from javadoc
+}
+
 publishing {
   publications {
     MyPublication(MavenPublication) {
-      from components.java
       groupId "com.anthli"
       artifactId "kdiff"
       version "1.0.0"
+      from components.java
+      artifact sourcesJar
+      artifact javadocJar
     }
   }
 }
 
 bintray {
-  user = project.property("bintrayUser")
-  key = project.property("bintrayKey")
+  user = project.hasProperty("bintrayUser") ? project.property("bintrayUser") : ""
+  key = project.hasProperty("bintrayKey") ? project.property("bintrayKey"): ""
   publications = ["MyPublication"]
   pkg {
     repo = "kdiff"
