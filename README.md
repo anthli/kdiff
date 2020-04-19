@@ -1,4 +1,4 @@
-# KDiff
+#kdiff
 ![Jenkins Build Status](https://img.shields.io/jenkins/build?jobUrl=http%3A%2F%2Fpi.anthli.com%3A8080%2Fjob%2Fkdiff%2F)
 [![Download](https://api.bintray.com/packages/anthli/kdiff/kdiff/images/download.svg)](https://bintray.com/anthli/kdiff/kdiff/_latestVersion)
 
