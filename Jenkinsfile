@@ -32,7 +32,7 @@ pipeline {
   agent any
 
   environment {
-    branch = "master"
+    branch = "dev"
     repoUrl = scm.getUserRemoteConfigs()[0].getUrl()
   }
 
