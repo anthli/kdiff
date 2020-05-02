@@ -71,7 +71,7 @@ bintray {
   pkg {
     repo = "kdiff"
     name = "kdiff"
-    licenses = ["GPL-3.0"]
+    licenses = ["MIT"]
     vcsUrl = "https://github.com/anthli/kdiff.git"
     version {
       name = "1.0.0"

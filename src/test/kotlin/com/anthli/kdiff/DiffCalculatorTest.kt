@@ -67,9 +67,7 @@ class DiffCalculatorTest {
 
   @Test
   fun `diff with newline character inserted`() {
-    val a = """
-      ABC
-    """.trimIndent()
+    val a = "ABC"
     val b = """
       A
       BC
@@ -83,10 +81,22 @@ class DiffCalculatorTest {
       AB
       C
     """.trimIndent()
-    val b = """
-      ABC
-    """.trimIndent()
+    val b = "ABC"
     testDiff(a, b, "AB-\nC")
+  }
+
+  @Test
+  fun `diff with same letter inserted expects insert on the right`() {
+    val a = "A"
+    val b = "AA"
+    testDiff(a, b, "A+A")
+  }
+
+  @Test
+  fun `diff with same letter deleted expects delete on the right`() {
+    val a = "AA"
+    val b = "A"
+    testDiff(a, b, "A-A")
   }
 
   private fun testDiff(a: String, b: String, expectedDiffString: String) {
