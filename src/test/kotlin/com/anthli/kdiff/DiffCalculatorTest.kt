@@ -85,20 +85,6 @@ class DiffCalculatorTest {
     testDiff(a, b, "AB-\nC")
   }
 
-  @Test
-  fun `diff with same letter inserted expects insert on the right`() {
-    val a = "A"
-    val b = "AA"
-    testDiff(a, b, "A+A")
-  }
-
-  @Test
-  fun `diff with same letter deleted expects delete on the right`() {
-    val a = "AA"
-    val b = "A"
-    testDiff(a, b, "A-A")
-  }
-
   private fun testDiff(a: String, b: String, expectedDiffString: String) {
     val diffCalculator = DiffCalculator(a, b)
     val actualDiffs = diffCalculator.compute().toList()

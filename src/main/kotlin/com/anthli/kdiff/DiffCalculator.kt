@@ -23,8 +23,7 @@ class DiffCalculator(
   fun compute(): Sequence<Diff> {
     val m = oldString.length
     val n = newString.length
-    
-    
+
     val editGraph = getLcsEditGraph(m, n)
     return computeDiffs(editGraph, m, n)
   }
