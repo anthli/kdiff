@@ -68,6 +68,7 @@ bintray {
   user = project.hasProperty("bintrayUser") ? project.property("bintrayUser") : ""
   key = project.hasProperty("bintrayKey") ? project.property("bintrayKey"): ""
   publications = ["MyPublication"]
+  override = true
   pkg {
     repo = "kdiff"
     name = "kdiff"
