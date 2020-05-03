@@ -10,7 +10,7 @@ plugins {
   id "org.jetbrains.kotlin.plugin.serialization" version "$kotlinVersion"
 }
 
-version "1.0.0"
+version "1.1.0"
 
 test {
   useJUnitPlatform()
@@ -66,7 +66,7 @@ publishing {
 
 bintray {
   user = project.hasProperty("bintrayUser") ? project.property("bintrayUser") : ""
-  key = project.hasProperty("bintrayKey") ? project.property("bintrayKey"): ""
+  key = project.hasProperty("bintrayKey") ? project.property("bintrayKey") : ""
   publications = ["MyPublication"]
   override = true
   pkg {
@@ -75,7 +75,7 @@ bintray {
     licenses = ["MIT"]
     vcsUrl = "https://github.com/anthli/kdiff.git"
     version {
-      name = "1.0.0"
+      name = "1.1.0"
       desc = "A diff library in Kotlin"
     }
   }
