@@ -10,22 +10,101 @@ import kotlin.math.max
 
 /**
  * Diff implementation that takes in two sequences and generates a diff output.
+ *
+ * Optimizations are inspired by Neil Fraser's Diff Strategies found
+ * [here](https://neil.fraser.name/writing/diff/).
  */
-class DiffCalculator(
-  private val oldString: String,
-  private val newString: String
-) {
+class DiffCalculator(private val oldString: String, private val newString: String) {
   /**
    * Computes the sequence of [Diff]s between the old and new strings.
    *
    * @return The sequence of [Diff]s between the old and new strings.
    */
   fun compute(): Sequence<Diff> {
-    val m = oldString.length
-    val n = newString.length
+    // Everything in the new string is inserted; there are no diffs to compute
+    if (oldString.isEmpty()) {
+      return sequenceOf(Diff(Operation.INSERT, newString))
+    }
 
-    val editGraph = getLcsEditGraph(m, n)
-    return computeDiffs(editGraph, m, n)
+    // Everything in the old string is deleted; there are no diffs to compute
+    if (newString.isEmpty()) {
+      return sequenceOf(Diff(Operation.DELETE, oldString))
+    }
+
+    // Both strings are equal; there are no diffs to compute
+    if (oldString == newString) {
+      return sequenceOf(Diff(Operation.EQUAL, oldString))
+    }
+
+    // Compute the common affixes between both strings as a performance
+    // optimization
+    val commonPrefixLength = getCommonPrefixLength(oldString, newString)
+    val commonSuffixLength = getCommonSuffixLength(oldString, newString)
+    val optimizedOldStringEndIndex = oldString.length - commonSuffixLength
+    val optimizedNewStringEndIndex = newString.length - commonSuffixLength
+    val optimizedOldString = oldString.substring(commonPrefixLength, optimizedOldStringEndIndex)
+    val optimizedNewString = newString.substring(commonPrefixLength, optimizedNewStringEndIndex)
+    val commonPrefixDiff = Diff(Operation.EQUAL, oldString.substring(0, commonPrefixLength))
+    val commonSuffixDiff = Diff(Operation.EQUAL, oldString.substring(optimizedOldStringEndIndex))
+
+    // Compute the diffs between both strings without any affixes
+    val editGraph = getLcsEditGraph(optimizedOldString, optimizedNewString)
+    val computedDiffs = computeDiffs(editGraph, optimizedOldString, optimizedNewString)
+    return sequenceOf(commonPrefixDiff)
+      .plus(computedDiffs)
+      .plus(commonSuffixDiff)
+  }
+
+  /**
+   * Finds and returns the length of the common prefix between the old and new
+   * strings.
+   *
+   * @param oldString
+   *   The old string to find the common prefix for.
+   * @param newString
+   *   The new string to find the common prefix for.
+   */
+  private fun getCommonPrefixLength(oldString: String, newString: String): Int {
+    var commonPrefixLength = 0
+    var i = 0
+    while (i < oldString.length && i < newString.length) {
+      // The moment characters don't match, the prefix ends
+      if (oldString[i] != newString[i]) {
+        break
+      }
+
+      commonPrefixLength++
+      i++
+    }
+
+    return commonPrefixLength
+  }
+
+  /**
+   * Finds and returns the length of the common suffix between the old and new
+   * strings.
+   *
+   * @param oldString
+   *   The old string to find the common suffix for.
+   * @param newString
+   *   The new string to find the common suffix for.
+   */
+  private fun getCommonSuffixLength(oldString: String, newString: String): Int {
+    var commonSuffixLength = 0
+    var i = oldString.length - 1
+    var j = newString.length - 1
+    while (i > 0 && j > 0) {
+      // The moment characters don't match, the suffix ends
+      if (oldString[i] != newString[j]) {
+        break
+      }
+
+      commonSuffixLength++
+      i--
+      j--
+    }
+
+    return commonSuffixLength
   }
 
   /**
@@ -34,18 +113,25 @@ class DiffCalculator(
    *
    * @param editGraph
    *   The [EditGraph] containing the paths of the longest common subsequences.
-   * @param m
-   *   The length of the old string.
-   * @param n
-   *   The length of the new string.
+   * @param oldString
+   *   The old string to compute the [Diff]s for
+   * @param newString
+   *   The new string to compute the [Diff]s for.
    * @return The sequence of [Diff]s between the old and new strings.
    */
   private fun computeDiffs(
     editGraph: EditGraph,
-    m: Int,
-    n: Int
+    oldString: String,
+    newString: String
   ): Sequence<Diff> {
-    return computeDiffs(editGraph, m, n, emptySequence())
+    return computeDiffs(
+      editGraph,
+      oldString,
+      newString,
+      oldString.length,
+      newString.length,
+      emptySequence()
+    )
   }
 
   /**
@@ -109,6 +195,10 @@ class DiffCalculator(
    *
    * @param editGraph
    *   The [EditGraph] containing the paths of the longest common subsequences.
+   * @param oldString
+   *   The old string to compute the [Diff]s for
+   * @param newString
+   *   The new string to compute the [Diff]s for.
    * @param m
    *   The length of the old string.
    * @param n
@@ -120,6 +210,8 @@ class DiffCalculator(
    */
   private fun computeDiffs(
     editGraph: EditGraph,
+    oldString: String,
+    newString: String,
     m: Int,
     n: Int,
     acc: Sequence<Diff>
@@ -127,7 +219,7 @@ class DiffCalculator(
     // Moving up diagonally to the left on the edit graph indicates matching
     // characters in both strings.
     if (m > 0 && n > 0 && oldString[m - 1] == newString[n - 1]) {
-      return computeDiffs(editGraph, m - 1, n - 1, acc)
+      return computeDiffs(editGraph, oldString, newString, m - 1, n - 1, acc)
         .plus(Diff(Operation.EQUAL, oldString[m - 1].toString()))
     }
 
@@ -135,7 +227,7 @@ class DiffCalculator(
     // the old string. Using > instead of >= here ensures that deletions will
     // occur before insertions because the inequality check is strict.
     if (m > 0 && (n == 0 || editGraph[m - 1, n] > editGraph[m, n - 1])) {
-      return computeDiffs(editGraph, m - 1, n, acc)
+      return computeDiffs(editGraph, oldString, newString, m - 1, n, acc)
         .plus(Diff(Operation.DELETE, oldString[m - 1].toString()))
     }
 
@@ -143,7 +235,7 @@ class DiffCalculator(
     // from the new string. Using <= instead of < ensures that insertions will
     // occur after deletions because the inequality check is not strict.
     if (n > 0 && (m == 0 || editGraph[m - 1, n] <= editGraph[m, n - 1])) {
-      return computeDiffs(editGraph, m, n - 1, acc)
+      return computeDiffs(editGraph, oldString, newString, m, n - 1, acc)
         .plus(Diff(Operation.INSERT, newString[n - 1].toString()))
     }
 
@@ -184,19 +276,21 @@ class DiffCalculator(
    * A 7   | 0   1   2   3   3   4   4
    * ```
    *
-   * @param m
-   *   The length of the old string.
-   * @param n
-   *   The length of the new string.
+   * @param oldString
+   *   The old string to construct the [EditGraph] for.
+   * @param newString
+   *   The new string to construct the [EditGraph] for.
    * @return
    *   The [EditGraph] containing the paths of the longest common
    *   subsequences.
    */
-  private fun getLcsEditGraph(m: Int, n: Int): EditGraph {
-    val editGraph = EditGraph(m, n)
+  private fun getLcsEditGraph(oldString: String, newString: String): EditGraph {
+    val oldStringLength = oldString.length
+    val newStringLength = newString.length
+    val editGraph = EditGraph(oldStringLength, newStringLength)
 
-    for (i in 1..m) {
-      for (j in 1..n) {
+    for (i in 1..oldStringLength) {
+      for (j in 1..newStringLength) {
         if (oldString[i - 1] == newString[j - 1]) {
           editGraph[i, j] = 1 + editGraph[i - 1, j - 1]
         }

@@ -11,45 +11,38 @@ import org.junit.jupiter.api.Test
 
 class DiffCalculatorTest {
   @Test
-  fun `diffs generated for "ABCABBA" and "CBABAC"`() {
-    val a = "ABCABBA"
-    val b = "CBABAC"
-    testDiff(a, b, "-A-BC-AB+ABA+C")
+  fun `insert diff generated for empty old string`() {
+    testDiff("", "A", "+A")
   }
 
   @Test
-  fun `diffs generated for "!@#T$%^" and "&*T()-"`() {
-    val a = "!@#T$%^"
-    val b = "&*T()-"
-    testDiff(a, b, "-!-@-#+&+*T-$-%-^+(+)+-")
-  }
-
-  @Test
-  fun `diff generated for "A" and "B"`() {
-    val a = "A"
-    val b = "B"
-    testDiff(a, b, "-A+B")
+  fun `delete diff generated for empty new string`() {
+    testDiff("A", "", "-A")
   }
 
   @Test
   fun `equal diff generated for "A" and "A"`() {
-    val a = "A"
-    val b = "A"
-    testDiff(a, b, "A")
+    testDiff("A", "A", "A")
   }
 
   @Test
-  fun `all insert diffs generated for "" and "ABC"`() {
-    val a = ""
-    val b = "ABC"
-    testDiff(a, b, "+A+B+C")
+  fun `diffs generated for same letter different case`() {
+    testDiff("a", "A", "-a+A")
   }
 
   @Test
-  fun `all delete diffs generated for "ABC" and ""`() {
-    val a = "ABC"
-    val b = ""
-    testDiff(a, b, "-A-B-C")
+  fun `diffs generated for "ABCABBA" and "CBABAC"`() {
+    testDiff("ABCABBA", "CBABAC", "-A-BC-AB+ABA+C")
+  }
+
+  @Test
+  fun `diffs generated for "!@#T$%^" and "&*T()-"`() {
+    testDiff("!@#T$%^", "&*T()-", "-!-@-#+&+*T-$-%-^+(+)+-")
+  }
+
+  @Test
+  fun `diffs generated for "A" and "B"`() {
+    testDiff("A", "B", "-A+B")
   }
 
   @Test
@@ -85,8 +78,30 @@ class DiffCalculatorTest {
     testDiff(a, b, "AB-\nC")
   }
 
-  private fun testDiff(a: String, b: String, expectedDiffString: String) {
-    val diffCalculator = DiffCalculator(a, b)
+  /**
+   * Prefixes are computed before suffixes, so the algorithm will detect that
+   * the second "A" is inserted
+   */
+  @Test
+  fun `diff between "A" and "AA" expects second "A" to be inserted`() {
+    testDiff("A", "AA", "A+A")
+  }
+
+  /**
+   * Prefixes are computed before suffixes, so the algorithm will detect that
+   * the second "A" is deleted
+   */
+  @Test
+  fun `diff between "AA" and "A" expects second "A" to be deleted`() {
+    testDiff("AA", "A", "A-A")
+  }
+
+  private fun testDiff(
+    oldString: String,
+    newString: String,
+    expectedDiffString: String
+  ) {
+    val diffCalculator = DiffCalculator(oldString, newString)
     val actualDiffs = diffCalculator.compute().toList()
     Assertions.assertTrue(actualDiffs.count() > 0)
 
