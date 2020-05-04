@@ -38,8 +38,33 @@ class DiffCalculator(private val oldString: String, private val newString: Strin
 
     // Compute the common affixes between both strings as a performance
     // optimization
-    val commonPrefixLength = getCommonPrefixLength(oldString, newString)
-    val commonSuffixLength = getCommonSuffixLength(oldString, newString)
+    val commonPrefix = getCommonPrefix(oldString, newString)
+    val commonSuffix = getCommonSuffix(oldString, newString)
+    val commonPrefixLength = commonPrefix.length
+
+    // Ignore the common suffix if the common prefix ends with it. This prevents
+    // an affix from being classified as both a prefix and suffix. Otherwise,
+    // what will happen is that the shorter string will throw a
+    // StringIndexOutOfBoundsException and the substring of the longer string
+    // will end up containing less letters than it should. For example,
+    //
+    // Old String: AABB
+    // New String: AABBCDEFBB
+    // Common Prefix: AABB
+    // Common Suffix: BB
+    //
+    // The expected diff here would be "CDEFBB" being inserted to the right of
+    // "AABB". Without this check, the optimized old string will throw an
+    // exception. The optimized new string will be "CDEF" instead of "CDEFBB"
+    // because it will take account of the common suffix in the substring
+    // end index.
+    val commonSuffixLength = if (commonPrefix.endsWith(commonSuffix)) {
+      0
+    }
+    else {
+      commonSuffix.length
+    }
+
     val optimizedOldStringEndIndex = oldString.length - commonSuffixLength
     val optimizedNewStringEndIndex = newString.length - commonSuffixLength
     val optimizedOldString = oldString.substring(commonPrefixLength, optimizedOldStringEndIndex)
@@ -56,16 +81,15 @@ class DiffCalculator(private val oldString: String, private val newString: Strin
   }
 
   /**
-   * Finds and returns the length of the common prefix between the old and new
-   * strings.
+   * Finds and returns the common prefix between the old and new strings.
    *
    * @param oldString
    *   The old string to find the common prefix for.
    * @param newString
    *   The new string to find the common prefix for.
    */
-  private fun getCommonPrefixLength(oldString: String, newString: String): Int {
-    var commonPrefixLength = 0
+  private fun getCommonPrefix(oldString: String, newString: String): String {
+    val commonPrefixBuilder = StringBuilder()
     var i = 0
     while (i < oldString.length && i < newString.length) {
       // The moment characters don't match, the prefix ends
@@ -73,38 +97,37 @@ class DiffCalculator(private val oldString: String, private val newString: Strin
         break
       }
 
-      commonPrefixLength++
+      commonPrefixBuilder.append(oldString[i])
       i++
     }
 
-    return commonPrefixLength
+    return commonPrefixBuilder.toString()
   }
 
   /**
-   * Finds and returns the length of the common suffix between the old and new
-   * strings.
+   * Finds and returns the common suffix between the old and new strings.
    *
    * @param oldString
    *   The old string to find the common suffix for.
    * @param newString
    *   The new string to find the common suffix for.
    */
-  private fun getCommonSuffixLength(oldString: String, newString: String): Int {
-    var commonSuffixLength = 0
+  private fun getCommonSuffix(oldString: String, newString: String): String {
+    val commonSuffixBuilder = StringBuilder()
     var i = oldString.length - 1
     var j = newString.length - 1
-    while (i > 0 && j > 0) {
+    while (i >= 0 && j >= 0) {
       // The moment characters don't match, the suffix ends
       if (oldString[i] != newString[j]) {
         break
       }
 
-      commonSuffixLength++
+      commonSuffixBuilder.append(oldString[i])
       i--
       j--
     }
 
-    return commonSuffixLength
+    return commonSuffixBuilder.toString()
   }
 
   /**
