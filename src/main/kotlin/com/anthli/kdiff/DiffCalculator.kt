@@ -127,7 +127,8 @@ class DiffCalculator(private val oldString: String, private val newString: Strin
       j--
     }
 
-    return commonSuffixBuilder.toString()
+    // Reverse the builder since the common suffix letters were added backwards
+    return commonSuffixBuilder.reverse().toString()
   }
 
   /**
