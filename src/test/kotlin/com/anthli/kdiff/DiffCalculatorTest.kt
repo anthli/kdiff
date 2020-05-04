@@ -113,6 +113,9 @@ class DiffCalculatorTest {
     testDiff("AAB", "AABB", "AAB+B")
     testDiff("AABB", "AAB", "AAB-B")
     testDiff("AABB", "AABBCDEFBB", "AABB+C+D+E+F+B+B")
+    // Test case for the bug where the letters in the common suffix were being
+    // appended backwards
+    testDiff("ABAB", "ABCAB", "AB+CAB")
   }
 
   private fun testDiff(
