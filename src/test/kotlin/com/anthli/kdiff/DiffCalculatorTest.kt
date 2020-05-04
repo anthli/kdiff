@@ -47,40 +47,43 @@ class DiffCalculatorTest {
 
   @Test
   fun `diff with newline character`() {
-    val a = """
+    val oldString = """
       AB
       C
     """.trimIndent()
-    val b = """
+    val newString = """
       A
       BC
     """.trimIndent()
-    testDiff(a, b, "A-B\n+BC")
+    testDiff(oldString, newString, "A-B\n+BC")
   }
 
   @Test
   fun `diff with newline character inserted`() {
-    val a = "ABC"
-    val b = """
+    val oldString = "ABC"
+    val newString = """
       A
       BC
     """.trimIndent()
-    testDiff(a, b, "A+\nBC")
+    testDiff(oldString, newString, "A+\nBC")
   }
 
   @Test
   fun `diff with newline character deleted`() {
-    val a = """
+    val oldString = """
       AB
       C
     """.trimIndent()
-    val b = "ABC"
-    testDiff(a, b, "AB-\nC")
+    val newString = "ABC"
+    testDiff(oldString, newString, "AB-\nC")
   }
 
   /**
    * Prefixes are computed before suffixes, so the algorithm will detect that
-   * the second "A" is inserted
+   * the second "A" is inserted.
+   *
+   * This also tests the affix computation where the common prefix contains at
+   * least part of the common suffix.
    */
   @Test
   fun `diff between "A" and "AA" expects second "A" to be inserted`() {
@@ -89,11 +92,27 @@ class DiffCalculatorTest {
 
   /**
    * Prefixes are computed before suffixes, so the algorithm will detect that
-   * the second "A" is deleted
+   * the second "A" is deleted.
+   *
+   * This tests the affix computation where there is a common prefix between the
+   * old and new strings. However, part of the common prefix is also a part of
+   * the common suffix. This causes a StringIndexOutOfBoundsException since the
+   * indices overlap
    */
   @Test
   fun `diff between "AA" and "A" expects second "A" to be deleted`() {
     testDiff("AA", "A", "A-A")
+  }
+
+  /**
+   * This tests the affix computation where there is a common prefix between the
+   * old and new strings that also ends with the common suffix.
+   */
+  @Test
+  fun `diff between strings where common prefix contains common suffix`() {
+    testDiff("AAB", "AABB", "AAB+B")
+    testDiff("AABB", "AAB", "AAB-B")
+    testDiff("AABB", "AABBCDEFBB", "AABB+C+D+E+F+B+B")
   }
 
   private fun testDiff(
